@@ -36,10 +36,10 @@ func (t *TestTemplate) RemoveFirstRecipient() bool {
 }
 
 //SetupMessage - Setup the message that will be sent by this template
-func (t *TestTemplate) SetupMessage(mainEmail string, contact *mailer.Contact) *gomail.Message {
+func (t *TestTemplate) SetupMessage(mainEmail string, domain string, contact *mailer.Contact) *gomail.Message {
 
 	body := "Hello " + contact.Name
-	html := formats.GetBasicFormat(body, "Test Header", "")
+	html := formats.GetBasicFormat(body, "Test Header", domain)
 
 	m := gomail.NewMessage()
 	m.SetHeader("From", mainEmail)

@@ -18,7 +18,7 @@ type Template interface {
 	GetRecipients() *[]Contact
 	GetFirstRecipient() *Contact
 	RemoveFirstRecipient() bool
-	SetupMessage(mainEmail string, contact *Contact) *gomail.Message
+	SetupMessage(mainEmail string, domain string, contact *Contact) *gomail.Message
 }
 
 //Emailer - emailer struct
@@ -72,6 +72,7 @@ func (e *Emailer) SendEmail(template Template) error {
 
 		//Validate contact
 		if contact == nil || contact.Email == "" {
+			template.RemoveFirstRecipient() //If not valid remove and continue to next contact
 			continue
 		}
 
@@ -79,7 +80,7 @@ func (e *Emailer) SendEmail(template Template) error {
 		template.RemoveFirstRecipient()
 
 		//Create the email for the specific person
-		m := template.SetupMessage(e.Email, contact)
+		m := template.SetupMessage(e.Email, e.Host, contact)
 
 		//Attempt to send email
 		if err := t.Send(e.Email, []string{contact.Email}, m); err != nil {
