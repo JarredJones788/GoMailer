@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"mailer"
 	"os"
+	"templates"
 )
 
 func main() {
@@ -12,7 +13,7 @@ func main() {
 	jarred := mailer.Contact{"Jarred", "jarred788@hotmail.com"}
 	scopes := mailer.Contact{"Scopes", "iamscopes123@hotmail.com"}
 
-	template := mailer.Template{}.GetTestTemplate([]mailer.Contact{jarred, scopes})
+	template := templates.TestTemplate{}.Create([]mailer.Contact{jarred, scopes})
 	go mail.SendEmails(template)
 
 	reader := bufio.NewReader(os.Stdin)
