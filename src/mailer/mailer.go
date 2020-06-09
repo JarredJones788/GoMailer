@@ -20,6 +20,7 @@ type Template struct {
 	Subject    string
 	Header     string
 	Body       string
+	style      func(body string, title string, domain string) string
 }
 
 //Emailer - emailer struct
@@ -43,7 +44,79 @@ func (e Emailer) Init() *Emailer {
 	return &e
 }
 
-func (e *Emailer) getTemplate(body string, title string, domain string) string {
+//SendEmails - Sends template to the given emails inside the template
+func (e *Emailer) SendEmails(template *Template) error {
+
+	//Create SMTP Dial
+	d := gomail.NewDialer(e.SMTPAddress, e.SMTPPort, e.Email, e.Password)
+
+	//Attempt to connect
+	t, err := d.Dial()
+
+	if err != nil {
+		return err
+	}
+
+	defer t.Close() //Close connection when done using
+
+	for {
+
+		//If emails are already being sent then wait untill we can send again
+		if e.InProgress {
+			continue
+		}
+
+		//Set InProgress to true, no other emails can be sent until its reset to false
+		e.InProgress = true
+
+		//Get first contact in list
+		contact := template.Recipients[0]
+
+		//Remove first contact from the list
+		template.Recipients = template.Recipients[1:]
+
+		//Create the email for the specific person
+		m := gomail.NewMessage()
+		m.SetHeader("From", e.Email)
+		m.SetHeader("To", contact.Email)
+		m.SetAddressHeader("Cc", template.CC, "")
+		m.SetHeader("Subject", template.Subject)
+		m.SetBody("text/html", template.style(template.Body, template.Header, e.Host))
+
+		//Attempt to send email
+		if err := t.Send(e.Email, []string{contact.Email}, m); err != nil {
+			//Log Email failed sending
+			fmt.Println("Failed Sending Email To: " + contact.Email)
+			continue
+		}
+
+		//Log email sent
+		fmt.Println("Email Sent To: " + contact.Email)
+
+		select {
+		case <-time.After(time.Second * 4): // Wait 4 seconds before sending each email
+			e.InProgress = false
+			if len(template.Recipients) <= 0 { //Check if any emails are left to send to
+				return nil
+			}
+		}
+	}
+
+}
+
+//GetTestTemplate - return a test template
+func (t Template) GetTestTemplate(recipients []Contact) *Template {
+	t.Recipients = recipients
+	t.Subject = "New Login"
+	t.Header = "New Login"
+	t.Body = "New login detected"
+	t.style = getBasicTemplate
+
+	return &t
+}
+
+//Basic Template Style
+func getBasicTemplate(body string, title string, domain string) string {
 	return `
 	<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
         <html xmlns="http://www.w3.org/1999/xhtml">
@@ -304,74 +377,4 @@ func (e *Emailer) getTemplate(body string, title string, domain string) string {
         </body>
         </html>
 	`
-}
-
-//SendEmails - Sends template to the given emails inside the template
-func (e *Emailer) SendEmails(template *Template) error {
-
-	//Create SMTP Dial
-	d := gomail.NewDialer(e.SMTPAddress, e.SMTPPort, e.Email, e.Password)
-
-	//Attempt to connect
-	t, err := d.Dial()
-
-	if err != nil {
-		return err
-	}
-
-	defer t.Close() //Close connection when done using
-
-	for {
-
-		//If emails are already being sent then wait untill we can send again
-		if e.InProgress {
-			continue
-		}
-
-		//Set InProgress to true, no other emails can be sent until its reset to false
-		e.InProgress = true
-
-		//Get first contact in list
-		contact := template.Recipients[0]
-
-		//Remove first contact from the list
-		template.Recipients = template.Recipients[1:]
-
-		//Create the email for the specific person
-		m := gomail.NewMessage()
-		m.SetHeader("From", e.Email)
-		m.SetHeader("To", contact.Email)
-		m.SetAddressHeader("Cc", template.CC, "")
-		m.SetHeader("Subject", template.Subject)
-		m.SetBody("text/html", template.Body)
-
-		//Attempt to send email
-		if err := t.Send(e.Email, []string{contact.Email}, m); err != nil {
-			//Log Email failed sending
-			fmt.Println("Failed Sending Email To: " + contact.Email)
-			continue
-		}
-
-		//Log email sent
-		fmt.Println("Email Sent To: " + contact.Email)
-
-		select {
-		case <-time.After(time.Second * 4): // Wait 4 seconds before sending each email
-			e.InProgress = false
-			if len(template.Recipients) <= 0 { //Check if any emails are left to send to
-				return nil
-			}
-		}
-	}
-
-}
-
-//GetTestTemplate - return a test template
-func (t Template) GetTestTemplate(recipients []Contact) *Template {
-	t.Recipients = recipients
-	t.Subject = "Test Subject"
-	t.Header = "Test"
-	t.Body = "<html><h2>TEEEST</h2></html>"
-
-	return &t
 }
