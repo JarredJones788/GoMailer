@@ -14,7 +14,7 @@ func main() {
 	scopes := mailer.Contact{"Scopes", "iamscopes123@hotmail.com"}
 
 	template := templates.TestTemplate{}.Create([]mailer.Contact{jarred, scopes})
-	go mail.SendEmails(template)
+	go mail.SendEmail(template)
 
 	reader := bufio.NewReader(os.Stdin)
 	reader.ReadString('\n')

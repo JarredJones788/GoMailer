@@ -18,10 +18,7 @@ type Template interface {
 	GetRecipients() *[]Contact
 	GetFirstRecipient() *Contact
 	RemoveFirstRecipient() bool
-	GetCC() string
-	GetHeader() string
-	GetSubject() string
-	GetBody(contact *Contact) string
+	SetupMessage(mainEmail string, contact *Contact) *gomail.Message
 }
 
 //Emailer - emailer struct
@@ -45,8 +42,8 @@ func (e Emailer) Init() *Emailer {
 	return &e
 }
 
-//SendEmails - Sends template to the given emails inside the template
-func (e *Emailer) SendEmails(template Template) error {
+//SendEmail - Sends template to the given emails inside the template
+func (e *Emailer) SendEmail(template Template) error {
 
 	//Create SMTP Dial
 	d := gomail.NewDialer(e.SMTPAddress, e.SMTPPort, e.Email, e.Password)
@@ -73,16 +70,16 @@ func (e *Emailer) SendEmails(template Template) error {
 		//Get first contact in list
 		contact := template.GetFirstRecipient()
 
+		//Validate contact
+		if contact == nil || contact.Email == "" {
+			continue
+		}
+
 		//Remove first contact from the list
 		template.RemoveFirstRecipient()
 
 		//Create the email for the specific person
-		m := gomail.NewMessage()
-		m.SetHeader("From", e.Email)
-		m.SetHeader("To", contact.Email)
-		m.SetAddressHeader("Cc", template.GetCC(), "")
-		m.SetHeader("Subject", template.GetSubject())
-		m.SetBody("text/html", template.GetBody(contact))
+		m := template.SetupMessage(e.Email, contact)
 
 		//Attempt to send email
 		if err := t.Send(e.Email, []string{contact.Email}, m); err != nil {
@@ -95,7 +92,7 @@ func (e *Emailer) SendEmails(template Template) error {
 		fmt.Println("Email Sent To: " + contact.Email)
 
 		select {
-		case <-time.After(time.Second * 4): // Wait 4 seconds before sending each email
+		case <-time.After(time.Second * 3): // Wait 3 seconds before sending each email
 			e.InProgress = false
 			if len(*template.GetRecipients()) <= 0 { //Check if any emails are left to send to
 				return nil

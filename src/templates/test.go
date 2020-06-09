@@ -3,53 +3,50 @@ package templates
 import (
 	"formats"
 	"mailer"
+
+	"gopkg.in/gomail.v2"
 )
 
 //TestTemplate - Structure of test email
 type TestTemplate struct {
-	Recipients []mailer.Contact
+	recipients []mailer.Contact
 }
 
 //Create - return a test template
 func (t TestTemplate) Create(recipients []mailer.Contact) *TestTemplate {
-	t.Recipients = recipients
+	t.recipients = recipients
 
 	return &t
 }
 
 //GetRecipients - returns all contacts for this template
 func (t *TestTemplate) GetRecipients() *[]mailer.Contact {
-	return &t.Recipients
+	return &t.recipients
 }
 
 //GetFirstRecipient - returns first contact in the list
 func (t *TestTemplate) GetFirstRecipient() *mailer.Contact {
-	return &t.Recipients[0]
+	return &t.recipients[0]
 }
 
 //RemoveFirstRecipient - removes first contact in the list
 func (t *TestTemplate) RemoveFirstRecipient() bool {
-	t.Recipients = t.Recipients[1:]
+	t.recipients = t.recipients[1:]
 	return true
 }
 
-//GetCC - returns a string of emails to be cc'd
-func (t *TestTemplate) GetCC() string {
-	return ""
-}
+//SetupMessage - Setup the message that will be sent by this template
+func (t *TestTemplate) SetupMessage(mainEmail string, contact *mailer.Contact) *gomail.Message {
 
-//GetHeader - returns header of the email
-func (t *TestTemplate) GetHeader() string {
-	return "Test Header"
-}
-
-//GetSubject - returns subject of the email
-func (t *TestTemplate) GetSubject() string {
-	return "Test Subject"
-}
-
-//GetBody - returns body of the email
-func (t *TestTemplate) GetBody(contact *mailer.Contact) string {
 	body := "Hello " + contact.Name
-	return formats.GetBasicFormat(body, t.GetHeader(), "")
+	html := formats.GetBasicFormat(body, "Test Header", "")
+
+	m := gomail.NewMessage()
+	m.SetHeader("From", mainEmail)
+	m.SetHeader("To", contact.Email)
+	//m.SetAddressHeader("Cc", "jarred78888@hotmail.com", "Jarred")
+	m.SetHeader("Subject", "Test Subject")
+	m.SetBody("text/html", html)
+
+	return m
 }
