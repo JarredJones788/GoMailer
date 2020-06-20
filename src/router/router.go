@@ -132,8 +132,7 @@ func (router Router) sendEmail(w http.ResponseWriter, r *http.Request) {
 	}
 
 	//Send email
-	//go router.Mailer.SendEmail(template)
-	fmt.Println(template.GetFirstRecipient().Name)
+	go router.Mailer.SendEmail(template)
 
 	router.goodRequest(w)
 }
