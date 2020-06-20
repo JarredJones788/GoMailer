@@ -19,6 +19,11 @@ func (t TestTemplate) Create(recipients []mailer.Contact) *TestTemplate {
 	return &t
 }
 
+//GetType - returns the type of template
+func (t TestTemplate) GetType() string {
+	return "Test"
+}
+
 //GetRecipients - returns all contacts for this template
 func (t *TestTemplate) GetRecipients() *[]mailer.Contact {
 	return &t.recipients

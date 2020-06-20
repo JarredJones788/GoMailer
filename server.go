@@ -1,21 +1,34 @@
 package main
 
 import (
-	"bufio"
+	"config"
+	"fmt"
 	"mailer"
-	"os"
-	"templates"
+	"router"
 )
 
 func main() {
-	mail := mailer.Emailer{}.Init()
 
-	jarred := mailer.Contact{"Jarred", "jarred788@hotmail.com"}
-	scopes := mailer.Contact{"Scopes", "iamscopes123@hotmail.com"}
+	config := &config.Config{
+		Email: config.EmailConfig{
+			Email:       "info@tester788.info",
+			Password:    "n!_e6b62ft$3fd",
+			SMTPAddress: "smtp.office365.com",
+			SMTPPort:    587,
+		},
+		EmailKey: "./dev_secrets/email_key.txt",
+		Port:     ":5000",
+		Host:     "DOMAIN",
+	}
 
-	template := templates.TestTemplate{}.Create([]mailer.Contact{jarred, scopes})
-	go mail.SendEmail(template)
+	mail := mailer.Emailer{}.Init(config)
 
-	reader := bufio.NewReader(os.Stdin)
-	reader.ReadString('\n')
+	//Start router
+	err := router.Router{}.Init(mail, config)
+
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
 }

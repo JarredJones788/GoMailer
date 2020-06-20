@@ -1,6 +1,7 @@
 package mailer
 
 import (
+	"config"
 	"fmt"
 	"time"
 
@@ -15,6 +16,7 @@ type Contact struct {
 
 //Template - interface
 type Template interface {
+	GetType() string
 	GetRecipients() *[]Contact
 	GetFirstRecipient() *Contact
 	RemoveFirstRecipient() bool
@@ -32,12 +34,12 @@ type Emailer struct {
 }
 
 //Init - start email service
-func (e Emailer) Init() *Emailer {
-	e.Email = "info@tester788.info"
-	e.Password = "n!_e6b62ft$3fd"
-	e.SMTPAddress = "smtp.office365.com"
-	e.SMTPPort = 587
-	e.Host = "localhost:3000"
+func (e Emailer) Init(config *config.Config) *Emailer {
+	e.Email = config.Email.Email
+	e.Password = config.Email.Password
+	e.SMTPAddress = config.Email.SMTPAddress
+	e.SMTPPort = config.Email.SMTPPort
+	e.Host = config.Host
 	e.InProgress = false
 	return &e
 }
@@ -90,7 +92,7 @@ func (e *Emailer) SendEmail(template Template) error {
 		}
 
 		//Log email sent
-		fmt.Println("Email Sent To: " + contact.Email)
+		fmt.Println("Email Type " + template.GetType() + " Sent To: " + contact.Email)
 
 		select {
 		case <-time.After(time.Second * 3): // Wait 3 seconds before sending each email
